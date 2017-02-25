@@ -24,6 +24,12 @@ Other versions may work, except where indicated.
 
 Mac OS X and many linux distributions already have OpenSSL (libcrypto) installed.
 
+On Ubuntu, the following command will install software prerequisites:
+
+
+$ sudo apt-get install qt-sdk libssl-dev libxml2-dev libxslt-dev libexpat-dev 
+libtiff-dev libxmlsec1-dev
+
 Cmake
 ------------
 CMake is used to build this application. You may need to install CMake.
