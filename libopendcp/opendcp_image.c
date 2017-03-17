@@ -505,9 +505,9 @@ int rgb_to_xyz_calculate_float(opendcp_image_t *image, int index) {
     OPENDCP_LOG(LOG_DEBUG, "gamma: %f", GAMMA[index]);
 
     for (i = 0; i < size; i++) {
-        s.r = complex_gamma(image->component[0].float_data[i], GAMMA[index], index);
-        s.g = complex_gamma(image->component[1].float_data[i], GAMMA[index], index);
-        s.b = complex_gamma(image->component[2].float_data[i], GAMMA[index], index);
+        s.r = complex_gamma_float(image->component[0].float_data[i], GAMMA[index], index);
+        s.g = complex_gamma_float(image->component[1].float_data[i], GAMMA[index], index);
+        s.b = complex_gamma_float(image->component[2].float_data[i], GAMMA[index], index);
 
         d.x = ((s.r * color_matrix[index][0][0]) + (s.g * color_matrix[index][0][1]) + (s.b * color_matrix[index][0][2]));
         d.y = ((s.r * color_matrix[index][1][0]) + (s.g * color_matrix[index][1][1]) + (s.b * color_matrix[index][1][2]));
