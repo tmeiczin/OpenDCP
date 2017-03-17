@@ -30,6 +30,7 @@
   (m)<0?0:((m)>max?max:(m))
 
 extern int rgb_to_xyz_calculate(opendcp_image_t *image, int index);
+extern int rgb_to_xyz_calculate_float(opendcp_image_t *image, int index);
 extern int rgb_to_xyz_lut(opendcp_image_t *image, int index);
 
 /* create opendcp image structure for int */
@@ -102,11 +103,11 @@ opendcp_image_t *opendcp_image_float_create(int n_components, int w, int h) {
 
         for (x = 0; x < n_components; x++) {
             image->component[x].component_number = x;
-            image->component[x].float_data = (int *)malloc((w * h) * sizeof(int));
+            image->component[x].float_data = (float *)malloc((w * h) * sizeof(float));
 
             if (!image->component[x].float_data) {
                 OPENDCP_LOG(LOG_ERROR, "unable to allocate memory for image float components");
-                opendcp_image_free(image);
+                opendcp_image_free_float(image);
                 return NULL;
             }
         }
@@ -243,7 +244,8 @@ int opendcp_image_readline_float(opendcp_image_t *image, int y, unsigned char *d
 
     for (x = 0; x < image->w; x += 2) {
         i = (x + y + 0) + ((image->w - 1) * y);
-         /* get componets for two pixels, convert to 12 bit int */
+         /* get componets for two pixels, convert to 12 bit int (multiply 4096 for 12 bit integer) */
+      
         /* pixel 0 */
         int pixel0_b = (int)4095*image->component[0].float_data[i];
         int pixel0_g = (int)4095*image->component[1].float_data[i];
@@ -252,15 +254,49 @@ int opendcp_image_readline_float(opendcp_image_t *image, int y, unsigned char *d
         int pixel1_b = (int)4095*image->component[0].float_data[i+1];
         int pixel1_g = (int)4095*image->component[1].float_data[i+1];
         int pixel1_r = (int)4095*image->component[2].float_data[i+1];
+        
+        /* check values before save them, OpenEXR file can have pixel value > 1.0f and < 0.0f */
+        /* pixel 0 */
+        if( pixel0_b > 4095 )
+           pixel0_b = 4095;
+        else if( pixel0_b < 0 )
+           pixel0_b = 0;
+       
+       if( pixel0_g > 4095 )
+          pixel0_g = 4095;
+       else if( pixel0_g < 0 )
+          pixel0_g = 0;
+       
+       if( pixel0_r > 4095 )
+          pixel0_r = 4095;
+       else if( pixel0_r < 0 )
+          pixel0_r = 0;
+       
+       /* pixel 1 */
+       if( pixel1_b > 4095 )
+          pixel1_b = 4095;
+       else if( pixel1_b < 0 )
+          pixel1_b = 0;
+       
+       if( pixel1_g > 4095 )
+          pixel1_g = 4095;
+       else if( pixel1_g < 0 )
+          pixel1_g = 0;
+       
+       if( pixel1_r > 4095 )
+          pixel1_r = 4095;
+       else if( pixel1_r < 0 )
+          pixel1_r = 0;
+   
         /* put pixel data in dbuffer */
         dbuffer[d + 0] = pixel0_b >> 4;
-        dbuffer[d + 1] = (pixel0_b & 0x0f) << 4 ) | ((pixel0_g >> 8) & 0x0f);
+        dbuffer[d + 1] = ((pixel0_b & 0x0f) << 4 ) | ((pixel0_g >> 8) & 0x0f);
         dbuffer[d + 2] = pixel0_g;
         dbuffer[d + 3] = pixel0_r >> 4;
-        dbuffer[d + 4] = (pixel0_r & 0x0f) << 4 ) | ((pixel1_b >> 8) & 0x0f);
+        dbuffer[d + 4] = ((pixel0_r & 0x0f) << 4 ) | ((pixel1_b >> 8) & 0x0f);
         dbuffer[d + 5] = pixel1_b;
         dbuffer[d + 6] = (pixel1_g >> 4);
-        dbuffer[d + 7] = (pixel1_g << 4 ) | (pixel1_r >> 8) & 0x0f);
+        dbuffer[d + 7] = ((pixel1_g & 0x0f) << 4 ) | ((pixel1_r >> 8) & 0x0f);
         dbuffer[d + 8] = pixel1_r;
         d += 9;
     }
@@ -315,6 +351,54 @@ int check_image_compliance(int profile, opendcp_image_t *image, char *file) {
     return OPENDCP_NO_ERROR;
 }
 
+/*  check image compliance (float data) */
+int check_image_compliance_float(int profile, opendcp_image_t *image, char *file) {
+    int w, h;
+    int dci_w = MAX_WIDTH_2K;
+    int dci_h = MAX_HEIGHT_2K;
+    opendcp_image_t *tmp;
+
+    if (image == NULL) {
+        OPENDCP_LOG(LOG_DEBUG, "reading file %s", file);
+
+        if (read_image(&tmp, file) == OPENDCP_NO_ERROR) {
+            h = tmp->h;
+            w = tmp->w;
+            opendcp_image_free_float(tmp);
+        }
+        else {
+            opendcp_image_free_float(tmp);
+            return OPENDCP_ERROR;
+        }
+    }
+    else {
+        h = image->h;
+        w = image->w;
+    }
+
+    if (profile == DCP_CINEMA4K) {
+        dci_w = dci_w *2;
+        dci_h = dci_h *2;
+    }
+
+    if ((w != dci_w) && (h != dci_h)) {
+        OPENDCP_LOG(LOG_WARN, "image does not match at least one dimension of the DCI container");
+        return OPENDCP_ERROR;
+    }
+
+    if ((w > dci_w) || (h > dci_h)) {
+        OPENDCP_LOG(LOG_WARN, "image dimension exceeds DCI container");
+        return OPENDCP_ERROR;
+    }
+
+    if ((w % 2) || (h % 2)) {
+        OPENDCP_LOG(LOG_WARN, "image dimensions are not an even value");
+        return OPENDCP_ERROR;
+    }
+
+    return OPENDCP_NO_ERROR;
+}
+
 /* yuv444 to rgb 8888 (int data) */
 rgb_pixel_float_t yuv444toRGB888(int y, int cb, int cr) {
     rgb_pixel_float_t p;
@@ -337,11 +421,36 @@ rgb_pixel_float_t yuv444toRGB888_float(float y, float cb, float cr) {
     return(p);
 }
 
-/* complex gamma function */
+/* complex gamma function (int data) */
 float complex_gamma(float p, float gamma, int index) {
     float v;
 
     p = p / COLOR_DEPTH;
+
+    if (index) {
+        if (p > 0.081) {
+            v = pow((p + 0.099) / 1.099, gamma);
+        }
+        else {
+            v = p / 4.5;
+            v = pow((p + 0.099) / 1.099, gamma);
+        }
+    }
+    else {
+        if (p > 0.04045) {
+            v = pow((p + 0.055) / 1.055, gamma);
+        }
+        else {
+            v = p / 12.92;
+        }
+    }
+
+    return v;
+}
+
+/* complex gamma function (float data) */
+float complex_gamma_float(float p, float gamma, int index) {
+    float v;
 
     if (index) {
         if (p > 0.081) {
@@ -384,7 +493,7 @@ int dci_transfer(float p) {
 }
 
 /* dci transfer (floatt data) */
-float dci_transfer(float p) {
+float dci_transfer_float(float p) {
     float v;
 
     v = pow((p * DCI_COEFFICENT), DCI_DEGAMMA);
@@ -402,7 +511,7 @@ int dci_transfer_inverse(float p) {
 }
 
 /* dci transfer inverse (float data) */
-float dci_transfer_inverse(float p) {
+float dci_transfer_inverse_float(float p) {
 
     return (pow(p, 1 / DCI_GAMMA));
 }
