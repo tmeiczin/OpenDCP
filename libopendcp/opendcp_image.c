@@ -33,7 +33,7 @@ extern int rgb_to_xyz_calculate(opendcp_image_t *image, int index);
 extern int rgb_to_xyz_calculate_float(opendcp_image_t *image, int index);
 extern int rgb_to_xyz_lut(opendcp_image_t *image, int index);
 
-/* create opendcp image structure for int */
+/* create opendcp image structure (int data) */
 opendcp_image_t *opendcp_image_create(int n_components, int w, int h) {
     int x;
     opendcp_image_t *image = 00;
@@ -83,7 +83,7 @@ opendcp_image_t *opendcp_image_create(int n_components, int w, int h) {
 }
 
 /* create opendcp image structure for float */
-opendcp_image_t *opendcp_image_float_create(int n_components, int w, int h) {
+opendcp_image_t *opendcp_image_create_float(int n_components, int w, int h) {
     int x;
     opendcp_image_t *image = 00;
 
@@ -473,12 +473,24 @@ float complex_gamma_float(float p, float gamma, int index) {
     return v;
 }
 
+/* adjust headroom (int data) */
 int adjust_headroom(int p) {
     if (p < HEADROOM * 3)  {
         return  p - HEADROOM;
     }
 
     return p;
+}
+
+/* adjust headroom (float data) */
+float adjust_headroom_float(float p) {
+   float h = HEADROOM/4095.0;
+   
+   if (p < h * 3)  {
+      return  p - h;
+   }
+   
+   return p;
 }
 
 /* dci transfer (int data) */
