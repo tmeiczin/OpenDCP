@@ -47,6 +47,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <zlib.h>
 #include "opendcp.h"
 #include "opendcp_image.h"
 
@@ -58,11 +59,11 @@ typedef enum {
     EXR_COMPRESSION_ZIPS     = 2,          /* zip single line (not supported) */
     EXR_COMPRESSION_ZIP      = 3,          /* zip 16 lines                    */
     EXR_COMPRESSION_PIZ      = 4,          /* piz (not supported)             */
-    EXR_COMPRESSION_PXR24    = 5           /* pixar 24 bit (not supported)    */
-    EXR_COMPRESSION_B44      = 6           /* b44 (not supported)             */
-    EXR_COMPRESSION_B44A     = 7           /* b44a (not supported)            */
-    EXR_COMPRESSION_DWAA     = 8            /* dwaa 32 lines (not supported)  */
-    EXR_COMPRESSION_DWAB     = 9            /* dwab 256 lines (not supported) */
+    EXR_COMPRESSION_PXR24    = 5,          /* pixar 24 bit (not supported)    */
+    EXR_COMPRESSION_B44      = 6,          /* b44 (not supported)             */
+    EXR_COMPRESSION_B44A     = 7,          /* b44a (not supported)            */
+    EXR_COMPRESSION_DWAA     = 8,          /* dwaa 32 lines (not supported)  */
+    EXR_COMPRESSION_DWAB     = 9,          /* dwab 256 lines (not supported) */
 } exr_compression_enum;
 
 typedef enum {
@@ -347,8 +348,8 @@ exr_attributes read_attributes( FILE *exr_fp ) {
            fread( &(attributes.data_window.top), 4, 1, exr_fp );
         }
         else if( !strcmp( "displayWindow", attribute_name ) ) {
-           fread( &(attributes.display_Window.left), 4, 1, exr_fp );
-           fread( &(attributes.display_Window.bottom), 4, 1, exr_fp );
+           fread( &(attributes.display_window.left), 4, 1, exr_fp );
+           fread( &(attributes.display_window.bottom), 4, 1, exr_fp );
            fread( &(attributes.display_window.right), 4, 1, exr_fp );
            fread( &(attributes.display_window.top), 4, 1, exr_fp );
         }
@@ -433,7 +434,8 @@ void unfilter_buffer( unsigned char *buffer, unsigned char *unfilteredBuffer, un
 }
 
 /* uncompress rle - from OpenEXR library */
-void uncompress_rle( unsigned char *compressed_buffer, unsigned int compressed_buffer_length, unsigned char *uncompressed_buffer, unsigned int uncompressed_buffer_length) {
+void uncompress_rle( unsigned char *compressed_buffer, unsigned int compressed_buffer_length,
+                                      unsigned char *uncompressed_buffer, int uncompressed_buffer_length) {
 
    unsigned char *outStart = compressed_buffer;
    
@@ -786,7 +788,7 @@ int opendcp_decode_exr(opendcp_image_t **image_ptr, const char *sfile) {
    magicNumber |= fgetc(exr_fp) << 8;
    magicNumber |= fgetc(exr_fp);
     
-   if (readsize != MAGIC_NUMBER_EXR ) {
+   if ( magicNumber != MAGIC_NUMBER_EXR ) {
       OPENDCP_LOG(LOG_ERROR,"%-15.15s: failed to read magic number expected 0x%08x read 0x%08x","read_exr", MAGIC_NUMBER_EXR, magicNumber );
       OPENDCP_LOG(LOG_ERROR,"%s is not a valid EXR file", sfile);
       return OPENDCP_FATAL;
@@ -801,7 +803,7 @@ int opendcp_decode_exr(opendcp_image_t **image_ptr, const char *sfile) {
 
    // ---- file type: normal, deep pixel, multipart (only support normal)
    unsigned char type = fgetc(exr_fp);
-   if( type & 0x1a != 0x00 ) {
+   if( (type & 0x1a) != 0x00 ) {
       OPENDCP_LOG(LOG_ERROR,"Only support normal scanline exr file, no tile, deep pixel, multipart file");
      return OPENDCP_FATAL;
    }
@@ -811,7 +813,7 @@ int opendcp_decode_exr(opendcp_image_t **image_ptr, const char *sfile) {
    fgetc(exr_fp);
 
    // ---- read EXR attritubes need for dcp
-   exr_attributes attritbute = read_attributes( exr_fp );
+   exr_attributes attributes = read_attributes( exr_fp );
    
    // ---- check compression
    if( attributes.compression > EXR_COMPRESSION_ZIP ) {
@@ -851,11 +853,11 @@ int opendcp_decode_exr(opendcp_image_t **image_ptr, const char *sfile) {
     /* create the image (float data) */
    opendcp_image_t *image = opendcp_image_create_float(3, image_data.width, image_data.height);
   
-   unsigned int image_size = image_data.width * mage_data.height;
+   unsigned int image_size = image_data.width * image_data.height;
    unsigned int index = 0;
    while( index < image_size ) {
     // ---- need copy float data from exr image data to float opendcp image data
-      // ----- correct channel order?
+      // ----- correct channel order? Use float data for OpenEXR
       image->component[0].float_data[index] = image_data.channel_b[index];
       image->component[1].float_data[index] = image_data.channel_g[index];
       image->component[2].float_data[index] = image_data.channel_r[index];
