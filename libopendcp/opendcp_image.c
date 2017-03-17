@@ -82,7 +82,7 @@ opendcp_image_t *opendcp_image_create(int n_components, int w, int h) {
     return image;
 }
 
-/* create opendcp image structure for float */
+/* create opendcp image structure (float data) */
 opendcp_image_t *opendcp_image_create_float(int n_components, int w, int h) {
     int x;
     opendcp_image_t *image = 00;
