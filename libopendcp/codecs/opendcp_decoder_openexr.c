@@ -341,16 +341,16 @@ exr_attributes read_attributes( FILE *exr_fp ) {
          else if( !strcmp( "compression", attribute_name ) )
              attributes.compression = fgetc( exr_fp );
         else if( !strcmp( "dataWindow", attribute_name ) ) {
-           fread( &(attributes.dataWindow.left), 4, 1, exr_fp );
-           fread( &(attributes.dataWindow.bottom), 4, 1, exr_fp );
-           fread( &(attributes.dataWindow.right), 4, 1, exr_fp );
-           fread( &(attributes.dataWindow.top), 4, 1, exr_fp );
+           fread( &(attributes.data_window.left), 4, 1, exr_fp );
+           fread( &(attributes.data_window.bottom), 4, 1, exr_fp );
+           fread( &(attributes.data_window.right), 4, 1, exr_fp );
+           fread( &(attributes.data_window.top), 4, 1, exr_fp );
         }
         else if( !strcmp( "displayWindow", attribute_name ) ) {
-           fread( &(attributes.displayWindow.left), 4, 1, exr_fp );
-           fread( &(attributes.displayWindow.bottom), 4, 1, exr_fp );
-           fread( &(attributes.displayWindow.right), 4, 1, exr_fp );
-           fread( &(attributes.displayWindow.top), 4, 1, exr_fp );
+           fread( &(attributes.display_Window.left), 4, 1, exr_fp );
+           fread( &(attributes.display_Window.bottom), 4, 1, exr_fp );
+           fread( &(attributes.display_window.right), 4, 1, exr_fp );
+           fread( &(attributes.display_window.top), 4, 1, exr_fp );
         }
         else
          // ---- skip attribute
@@ -368,7 +368,7 @@ exr_attributes read_attributes( FILE *exr_fp ) {
 exr_chunk_data read_chunk_data( FILE *exr_fp, exr_attributes *attributes ) {
 
    exr_chunk_data chunk_data;
-   unsigned short num_rows = (attributes->dataWindow.top - attributes->dataWindow.bottom) + 1;
+   unsigned short num_rows = (attributes->data_window.top - attributes->data_window.bottom) + 1;
 
    // ---- if EXR_COMPRESSION_ZIP, 16 rows per chunk
    if( attributes->compression == EXR_COMPRESSION_ZIP ) { //
@@ -576,7 +576,7 @@ void copy_float_data( unsigned char *buffer, float *channel_data, unsigned short
 /* compression no */
 void read_data_compression_no( FILE *exr_fp, exr_chunk_data *chunk_data, exr_attributes *attributes, exr_image_data *image_data ) {
 
-   unsigned int num_columns = (attributes->dataWindow.right - attributes->dataWindow.left) + 1;
+   unsigned int num_columns = (attributes->data_window.right - attributes->data_window.left) + 1;
   
    unsigned short channel_data_width = attributes->channel_list.data_width;
 
@@ -622,7 +622,7 @@ void read_data_compression_no( FILE *exr_fp, exr_chunk_data *chunk_data, exr_att
 /* compression RLE */
 void read_data_compression_rle( FILE *exr_fp, exr_chunk_data *chunk_data, exr_attributes *attributes, exr_image_data *image_data ) {
 
-   unsigned int num_columns = (attributes->dataWindow.right - attributes->dataWindow.left) + 1;
+   unsigned int num_columns = (attributes->data_window.right - attributes->data_window.left) + 1;
   
    unsigned short channel_data_width = attributes->channel_list.data_width;
 
@@ -683,7 +683,7 @@ void read_data_compression_rle( FILE *exr_fp, exr_chunk_data *chunk_data, exr_at
 /* compression ZIPS an ZIP */
 void read_data_compression_zip( FILE *exr_fp, exr_chunk_data *chunk_data, exr_attributes *attributes, exr_image_data *image_data ) {
 
-   unsigned int num_columns = (attributes->dataWindow.right - attributes->dataWindow.left) + 1;
+   unsigned int num_columns = (attributes->data_window.right - attributes->data_window.left) + 1;
    unsigned char num_rows = 1;
    unsigned char *compressed_buffer = NULL;
    unsigned char *uncompressed_buffer = NULL;
@@ -830,8 +830,8 @@ int opendcp_decode_exr(opendcp_image_t **image_ptr, const char *sfile) {
 
     // ---- for store image data
    exr_image_data image_data;
-   image_data.width = attributes.dataWindow.right - attributes.dataWindow.left + 1;
-   image_data.height = attributes.dataWindow.top - attributes.dataWindow.bottom + 1;
+   image_data.width = attributes.data_window.right - attributes.data_window.left + 1;
+   image_data.height = attributes.data_window.top - attributes.data_window.bottom + 1;
    // ---- create buffers for image data
    image_data.channel_b = malloc( image_data.width*image_data.height * sizeof( float ) );
    image_data.channel_g = malloc( image_data.width*image_data.height * sizeof( float ) );
@@ -849,15 +849,17 @@ int opendcp_decode_exr(opendcp_image_t **image_ptr, const char *sfile) {
    fclose( exr_fp );
  
     /* create the image (float data) */
-   image = opendcp_image_create_float(3, image_data.width, mage_data.height);
+   opendcp_image_t *image = opendcp_image_create_float(3, image_data.width, image_data.height);
   
    unsigned int image_size = image_data.width * mage_data.height;
-   for (index = 0; index < image_size; index++) {
+   unsigned int index = 0;
+   while( index < image_size ) {
     // ---- need copy float data from exr image data to float opendcp image data
       // ----- correct channel order?
       image->component[0].float_data[index] = image_data.channel_b[index];
       image->component[1].float_data[index] = image_data.channel_g[index];
       image->component[2].float_data[index] = image_data.channel_r[index];
+      index++;
    }
  
    // ---- free chunk table
