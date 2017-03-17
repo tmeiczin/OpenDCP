@@ -73,7 +73,7 @@ typedef enum {
 
 typedef struct {
     char name[255];            /* channel name                                      */
-    unsigned char dataType;    /* channel data type, int, half, float               */
+    unsigned char data_type;   /* channel data type, int, half, float               */
     unsigned char non_linear;  /* non linear, only use for B44 and B44A compression */
     unsigned int sample_x;     /* sample x direction, only support == 1             */
     unsigned int sample_y;     /* sample y direction, only support == 1             */
@@ -98,7 +98,8 @@ typedef struct {
 typedef struct {
     exr_channel_list channel_list;    /* channel list */
     unsigned char compression;        /* compression */
-    exr_window dataWindow;            /* data window */
+    exr_window data_window;           /* data window */
+    exr_window display_window;        /* display window */
 } exr_attributes;
 
 /* exr chunk data */
