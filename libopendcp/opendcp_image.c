@@ -498,7 +498,7 @@ float dci_transfer_float(float p) {
 
     v = pow((p * DCI_COEFFICENT), DCI_DEGAMMA);
     // adjust value below full color pixel?
-    v -= HEADROOM/4096.0f;  //<---- assume int data function give 12 bit data
+    v -= HEADROOM/4095.0f;  //<---- assume int data function give 12 bit data
 
     return v;
 }
