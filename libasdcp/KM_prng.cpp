@@ -37,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sha1.h>
 #include <ttmath/ttmath.h>
+#include <openssl/aes.h>
 
 using namespace Kumu;
 
