@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008-2016, John Hurst
+Copyright (c) 2008-2015, John Hurst
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*! \file    AS_DCP_TimedText.cpp
-    \version $Id: AS_DCP_TimedText.cpp,v 1.41 2016/12/02 23:28:26 jhurst Exp $       
+    \version $Id: AS_DCP_TimedText.cpp,v 1.38 2015/10/09 23:41:11 jhurst Exp $       
     \brief   AS-DCP library, PCM essence reader and writer implementation
 */
 
@@ -43,16 +43,15 @@ static std::string TIMED_TEXT_DEF_LABEL = "Timed Text Track";
 
 //------------------------------------------------------------------------------------------
 
-//
-static const char*
+const char*
 MIME2str(TimedText::MIMEType_t m)
 {
   if ( m == TimedText::MT_PNG )
     return "image/png";
 
-  else if( m == TimedText::MT_OPENTYPE )
+  else if ( m == TimedText::MT_OPENTYPE )
     return "application/x-font-opentype";
-  
+
   return "application/octet-stream";
 }
 
@@ -580,7 +579,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::SetSourceStream(ASDCP::TimedText::TimedT
 
   if ( ASDCP_SUCCESS(result) )
     {
-      InitHeader(MXFVersion_2004);
+      InitHeader();
 
       // First RIP Entry
       if ( m_Info.LabelSetType == LS_MXF_SMPTE )  // ERK
@@ -634,7 +633,9 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteTimedTextResource(const std::string
 
       IndexTableSegment::IndexEntry Entry;
       Entry.StreamOffset = m_StreamOffset;
-      result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
+      
+      if ( ASDCP_SUCCESS(result) )
+	result = WriteEKLVPacket(FrameBuf, m_EssenceUL, Ctx, HMAC);
 
       if ( ASDCP_SUCCESS(result) )
 	{
@@ -668,7 +669,7 @@ ASDCP::TimedText::MXFWriter::h__Writer::WriteAncillaryResource(const ASDCP::Time
   GSPart.OperationalPattern = m_HeaderPart.OperationalPattern;
 
   m_RIP.PairArray.push_back(RIP::PartitionPair(m_EssenceStreamID++, here));
-  GSPart.EssenceContainers = m_HeaderPart.EssenceContainers;
+  GSPart.EssenceContainers.push_back(UL(m_Dict->ul(MDD_TimedTextEssence)));
   UL TmpUL(m_Dict->ul(MDD_GenericStreamPartition));
   Result_t result = GSPart.WriteToFile(m_File, TmpUL);
 
