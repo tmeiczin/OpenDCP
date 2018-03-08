@@ -64,7 +64,10 @@ typedef struct {
     unsigned char use_float;      /* flag for use float */
 } opendcp_image_t;
 
+
 int  read_image(opendcp_image_t **image, char *file);
+
+ /* int data functions */
 void opendcp_image_free(opendcp_image_t *image);
 int opendcp_image_size(opendcp_image_t *opendcp_image);
 int  opendcp_image_readline(opendcp_image_t *image, int y, unsigned char *data);
@@ -72,6 +75,14 @@ int  rgb_to_xyz(opendcp_image_t *image, int gamma, int method);
 int  resize(opendcp_image_t **image, int profile, int method);
 rgb_pixel_float_t yuv444toRGB888(int y, int cb, int cr);
 opendcp_image_t *opendcp_image_create(int n_components, int w, int h);
+    
+/* float data functions */
+void opendcp_image_free_float(opendcp_image_t *opendcp_image);
+int opendcp_image_readline_float(opendcp_image_t *image, int y, unsigned char *dbuffer);
+float rgb_to_xyz_float(opendcp_image_t *image, int index);
+int resize_float(opendcp_image_t **image, int profile, int method);
+rgb_pixel_float_t yuv444toRGB888_float(float y, float cb, float cr);
+opendcp_image_t *opendcp_image_create_float(int n_components, int w, int h);
 
 #ifdef __cplusplus
 }
