@@ -53,7 +53,7 @@ ENDIF(COMPILE_LIBXML2)
 
 IF(ENABLE_XMLSEC AND COMPILE_XMLSEC)
     IF(DOWNLOAD)
-        SET(URL http://www.aleksey.com/xmlsec/download)
+        SET(URL http://www.aleksey.com/xmlsec/download/old)
     ENDIF()
     IF(WIN32)
         SET(URL ${URL}/xmlsec1-1.2.18.tar.gz)
