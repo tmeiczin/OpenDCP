@@ -528,7 +528,7 @@ void MainWindow::mxfCreateSubtitle() {
     // copy keys if encrypted, and set flag
     if (ui->mxfEncryptionCheckBox->isChecked()) {
         QString keyId = ui->mxfKeyIdEdit->text().replace("-", "");
-        QString keyValue = ui->mxfKeyIdEdit->text();
+        QString keyValue = ui->mxfKeyEdit->text();
         memcpy(opendcp->mxf.key_id, QByteArray::fromHex(keyId.toLatin1()), 16);
         memcpy(opendcp->mxf.key_value, QByteArray::fromHex(keyValue.toLatin1()), 16);
         opendcp->mxf.key_flag = 1;
@@ -573,7 +573,7 @@ void MainWindow::mxfCreateAudio() {
     // copy keys if encrypted, and set flag
     if (ui->mxfEncryptionCheckBox->isChecked()) {
         QString keyId = ui->mxfKeyIdEdit->text().replace("-", "");
-        QString keyValue = ui->mxfKeyIdEdit->text();
+        QString keyValue = ui->mxfKeyEdit->text();
         memcpy(opendcp->mxf.key_id, QByteArray::fromHex(keyId.toLatin1()), 16);
         memcpy(opendcp->mxf.key_value, QByteArray::fromHex(keyValue.toLatin1()), 16);
         opendcp->mxf.key_flag = 1;
